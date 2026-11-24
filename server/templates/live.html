@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+{% set source_name = {"screen": "Экран", "camera": "Камера", "audio": "Микрофон"}[kind] %}
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ source_name }} · {{ hostname }}</title>
+  <script type="module" src="/static/live.js"></script>
+</head>
+<body>
+  <main class="live-viewer" data-device-id="{{ device_id }}" data-kind="{{ kind }}">
+    <header class="pane-header">
+      <h1>{{ source_name }} · {{ hostname }}</h1>
+      <button type="button" id="live-record" class="btn" disabled>Начать запись</button>
+      <button type="button" id="live-stop" class="btn" disabled>Остановить</button>
+    </header>
+    <p id="live-status" role="status">Отправляем запрос…</p>
+    <p id="live-record-status" role="status" hidden></p>
+    <p id="live-download-container" hidden>
+      <a id="live-download-link" download href="#">Скачать запись</a>
+    </p>
+    <form id="live-source-form" hidden>
+      <label for="live-source">Источник</label>
+      <select id="live-source" required></select>
+      <button type="submit" class="btn">Начать трансляцию</button>
+    </form>
+    {% if kind != "audio" %}
+    <img id="live-frame" alt="{{ "Демонстрация экрана" if kind == "screen" else "Видео с камеры" }}" hidden>
+    {% endif %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Справочник — RAC Server{% endblock %}
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+{% endblock %}
+{% block body %}
+<div class="app-layout">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <a href="/" class="header-back-link">← Консоль</a>
+      <span class="header-title">Справочник команд</span>
+    </div>
+    <div class="header-right">
+      <span class="user-badge">{{ user }}</span>
+      <form method="post" action="/logout" class="inline-form">
+        <button type="submit" class="btn-link">Выйти</button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Help tabs navigation -->
+  <nav class="help-nav-bar">
+    <button type="button" data-help-tab="agent" class="help-tab-btn is-active">Команды агента</button>
+    <button type="button" data-help-tab="windows" class="help-tab-btn">Команды Windows</button>
+  </nav>
+
+  <!-- Content container -->
+  <main class="help-main-content">
+    <article id="help-agent" class="md-body"></article>
+    <article id="help-windows" class="md-body is-hidden"></article>
+  </main>
+</div>
+
+<pre id="md-agent" hidden>{{ agent_md }}</pre>
+<pre id="md-windows" hidden>{{ windows_md }}</pre>
+<script>
+  (function () {
+    try {
+      const opts = { gfm: true, breaks: false };
+      if (window.marked && typeof marked.setOptions === 'function') marked.setOptions(opts);
+    } catch (e) { /* ignore */ }
+
+    function render(srcId, dstId) {
+      const srcEl = document.getElementById(srcId);
+      const dstEl = document.getElementById(dstId);
+      if (!srcEl || !dstEl) return;
+      const src = srcEl.textContent || '';
+      try {
+        if (window.marked && typeof marked.parse === 'function') {
+          dstEl.innerHTML = marked.parse(src);
+          return;
+        }
+      } catch (e) { /* fallback below */ }
+      dstEl.textContent = src;
+    }
+    render('md-agent', 'help-agent');
+    render('md-windows', 'help-windows');
+
+    const tabs = document.querySelectorAll('.help-tab-btn');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.helpTab;
+        tabs.forEach(x => {
+          x.classList.toggle('is-active', x.dataset.helpTab === name);
+        });
+        const elAgent = document.getElementById('help-agent');
+        const elWin = document.getElementById('help-windows');
+        if (elAgent) elAgent.classList.toggle('is-hidden', name !== 'agent');
+        if (elWin) elWin.classList.toggle('is-hidden', name !== 'windows');
+        window.scrollTo(0, 0);
+      });
+    });
+  })();
+</script>
+{% endblock %}

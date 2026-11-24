@@ -1,0 +1,19 @@
+server:
+  host: "0.0.0.0"
+  port: 9000
+
+auth:
+  username: "admin"
+  password_hash: "replace to generated hash "
+  session_secret: "random string"
+  session_lifetime_hours: 24
+
+storage:
+  cmds_dir: "./cmds"
+  uploads_dir: "./uploads"
+  db_path: "./data.db"
+  max_upload_size_mb: 100
+
+polling:
+  agent_poll_interval_sec: 2
+  online_threshold_sec: 30

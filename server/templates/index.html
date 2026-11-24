@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}RAC Server{% endblock %}
+{% block body %}
+<div class="app-layout">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="device-selector-group">
+        <select id="device-select" class="device-select" aria-label="Выбор устройства">
+          <option value="">— устройство —</option>
+        </select>
+        <span id="device-status" class="device-status-badge is-hidden"></span>
+        <button id="device-unlink" type="button" disabled class="btn-unlink" title="Отвязать выбранное устройство">
+          Отвязать
+        </button>
+      </div>
+    </div>
+
+    <div class="header-right header-actions-desktop">
+      <a href="/settings" class="header-link">Настройки</a>
+      <a href="/help" class="header-link">Справочник</a>
+      <span class="user-badge">{{ user }}</span>
+      <form method="post" action="/logout" class="inline-form">
+        <button type="submit" class="btn-link">Выйти</button>
+      </form>
+    </div>
+
+    <button id="menu-toggle" type="button" class="btn-menu-toggle" aria-label="Меню">
+      <svg class="menu-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+  </header>
+
+  <!-- Mobile menu dropdown -->
+  <div id="mobile-menu" class="mobile-menu-dropdown is-hidden">
+    <div class="mobile-menu-inner">
+      <span class="mobile-user">{{ user }}</span>
+      <div class="mobile-menu-links">
+        <a href="/settings" class="mobile-link">Настройки</a>
+        <a href="/help" class="mobile-link">Справочник</a>
+        <form method="post" action="/logout" class="inline-form">
+          <button type="submit" class="mobile-link btn-link">Выйти</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile navigation tabs -->
+  <nav class="mobile-nav-tabs" aria-label="Мобильные вкладки">
+    <button type="button" data-tab="console" class="tab-btn is-active">Консоль</button>
+    <button type="button" data-tab="files"   class="tab-btn">Файлы</button>
+    <button type="button" data-tab="uploads" class="tab-btn">Загрузки</button>
+  </nav>
+
+  <!-- Registration enrollments panel -->
+  <section aria-labelledby="enrollments-heading" class="enrollments-panel">
+    <div class="enrollments-header">
+      <h2 id="enrollments-heading" class="enrollments-title">Заявки на регистрацию</h2>
+      <span id="enrollment-status" role="status" class="enrollment-status-text">Загрузка заявок…</span>
+    </div>
+    <ul id="enrollment-list" class="enrollment-list"></ul>
+  </section>
+
+  <!-- Activity graph widget (collapsible) -->
+  <section class="activity-section" aria-labelledby="activity-heading">
+    <div class="activity-header">
+      <button type="button" id="activity-toggle" class="activity-toggle-btn" aria-expanded="false" aria-controls="activity-body">
+        <span id="activity-heading" class="activity-title">Активность устройства</span>
+        <span class="activity-toggle-icon" aria-hidden="true">▸</span>
+      </button>
+      <div class="activity-period-btns" role="group" aria-label="Период активности">
+        <button type="button" class="activity-period-btn is-active" data-period="24h" aria-pressed="true">24 ч</button>
+        <button type="button" class="activity-period-btn" data-period="7d" aria-pressed="false">7 дней</button>
+        <button type="button" class="activity-period-btn" data-period="30d" aria-pressed="false">Месяц</button>
+      </div>
+    </div>
+    <div id="activity-body" class="activity-body is-hidden">
+      <div id="activity-graph" class="activity-graph" aria-label="График активности устройства">
+        <div class="activity-status-msg" role="status">Выберите устройство</div>
+      </div>
+      <div class="activity-legend">
+        <span class="activity-legend-item"><span class="activity-swatch activity-swatch-active"></span>Есть запросы</span>
+        <span class="activity-legend-item"><span class="activity-swatch activity-swatch-none"></span>Нет запросов</span>
+        <span class="activity-legend-item"><span class="activity-swatch activity-swatch-before"></span>До отслеживания</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Global toast notification -->
+  <div id="toast" class="app-toast is-hidden" role="alert" aria-live="polite"></div>
+
+  <!-- Main content area -->
+  <main class="app-main-grid">
+
+    <!-- Console pane -->
+    <section id="pane-console" class="pane-card console-pane">
+      <div class="pane-header">
+        <span class="pane-title">Консоль</span>
+        <div class="console-pane-actions">
+          <button type="button" class="btn-clear-chat" data-live-kind="screen" disabled>Экран</button>
+          <button type="button" class="btn-clear-chat" data-live-kind="camera" disabled>Камера</button>
+          <button type="button" class="btn-clear-chat" data-live-kind="audio" disabled>Микрофон</button>
+          <button type="button" id="playback-btn" class="btn-clear-chat" disabled>Воспроизвести звук</button>
+          <button id="chat-clear" type="button" class="btn-clear-chat" disabled title="Очистить историю чата">
+            Очистить чат
+          </button>
+        </div>
+      </div>
+
+      <!-- Single scrollable commands list container -->
+      <div id="commands-list" class="chat-messages-container" tabindex="0" aria-label="История сообщений"></div>
+
+      <!-- Quick commands bar and add modal/form -->
+      <div class="quick-commands-bar">
+        <div id="quick-commands-list" class="quick-commands-list" aria-label="Быстрые команды"></div>
+        <button id="quick-cmd-toggle" type="button" class="btn-quick-toggle" title="Добавить кнопку"
+                aria-controls="quick-cmd-form" aria-expanded="false">Добавить кнопку</button>
+      </div>
+
+      <form id="quick-cmd-form" class="quick-cmd-form is-hidden">
+        <div class="quick-cmd-form-row">
+          <input id="quick-cmd-label" type="text" placeholder="Название" maxlength="60" required
+                 autocomplete="off" class="quick-cmd-input" aria-label="Название">
+          <textarea id="quick-cmd-text" placeholder="Текст команды" maxlength="2048" rows="2" required
+                    class="quick-cmd-input quick-cmd-input-command" aria-label="Текст команды"></textarea>
+          <button type="submit" class="btn btn-primary btn-quick-save">Сохранить</button>
+          <button id="quick-cmd-cancel" type="button" class="btn-quick-cancel">Отмена</button>
+        </div>
+      </form>
+
+      <!-- Sticky form at the bottom -->
+      <form id="cmd-form" class="chat-input-bar">
+        <input id="cmd-name" type="text" placeholder="Команда (например: exec ping 8.8.8.8)" maxlength="2048" required
+               autocomplete="off" class="chat-input-text" aria-label="Команда">
+        <div class="chat-input-actions">
+          <select id="cmd-upload" class="chat-input-upload" aria-label="Прикрепить загруженный файл">
+            <option value="">— без файла —</option>
+          </select>
+          <button type="submit" class="btn btn-primary btn-send">
+            Отправить
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Right pane: files explorer + uploads -->
+    <aside id="pane-right" class="pane-sidebar">
+
+      <!-- Files explorer -->
+      <section id="pane-files" class="pane-card files-pane">
+        <div class="pane-header">
+          <span class="pane-title">Проводник /cmds</span>
+          <button id="files-refresh" type="button" class="btn-refresh" title="Обновить список файлов">↻</button>
+        </div>
+        <div id="files-breadcrumbs" class="files-breadcrumbs"></div>
+        <div id="files-list" class="files-list-container"></div>
+      </section>
+
+      <!-- Uploads manager -->
+      <section id="pane-uploads" class="pane-card uploads-pane">
+        <div class="pane-header">
+          <span class="pane-title">Загрузки</span>
+          <label class="btn-upload-file">
+            + Загрузить
+            <input id="upload-input" type="file" class="visually-hidden">
+          </label>
+        </div>
+        <div id="uploads-progress" class="uploads-progress-bar is-hidden"></div>
+        <div id="uploads-list" class="uploads-list-container"></div>
+      </section>
+
+    </aside>
+
+  </main>
+</div>
+
+<script>
+  window.__APP__ = { initialDeviceId: new URL(location.href).searchParams.get('device_id') };
+</script>
+<script src="/static/app.js"></script>
+{% endblock %}
